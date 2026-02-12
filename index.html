@@ -1,0 +1,112 @@
+
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Outdoor Media Analytics Dashboard</title>
+  <style>
+    :root{
+      --bg:#0b3a78;
+      --card:rgba(255,255,255,.10);
+      --card2:rgba(255,255,255,.14);
+      --text:#fff;
+      --muted:rgba(255,255,255,.78);
+      --btn:#2563eb;
+      --btn2:#ffffff;
+    }
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      min-height:100vh;
+      background:
+        linear-gradient(180deg, rgba(10,35,75,.92) 0%, rgba(10,35,75,.82) 40%, rgba(10,35,75,.92) 100%),
+        url("https://images.unsplash.com/photo-1508057198894-247b23fe5ade?auto=format&fit=crop&w=2400&q=80");
+      background-size: cover;
+      background-position: center;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:40px 16px;
+    }
+    .wrap{ width:min(980px, 100%); text-align:center;}
+    .topbar{
+      display:flex; justify-content:flex-end; gap:12px; margin-bottom:40px;
+    }
+    .btn{
+      border:0; padding:10px 16px; border-radius:12px; cursor:pointer;
+      font-weight:600; box-shadow:0 10px 25px rgba(0,0,0,.18);
+    }
+    .btn.primary{ background:rgba(37,99,235,.92); color:white;}
+    .btn.ghost{ background:rgba(255,255,255,.92); color:#0b2b58;}
+    h1{ margin:0 0 8px; font-size: clamp(28px, 4vw, 46px); letter-spacing:-.5px; text-shadow:0 8px 30px rgba(0,0,0,.25);}
+    .sub{ margin:0 0 26px; color:var(--muted); font-size: clamp(14px, 2vw, 18px);}
+    .cta{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin: 18px 0 10px;}
+    .note{ color:var(--muted); font-size:14px; margin-top:10px;}
+    .grid{
+      margin:38px auto 0;
+      display:grid; gap:14px;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      padding:16px;
+      background:rgba(255,255,255,.08);
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(10px);
+    }
+    .box{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:16px;
+      padding:14px;
+      text-align:left;
+      min-height:86px;
+    }
+    .box b{ display:block; margin-bottom:6px;}
+    .box span{ color:var(--muted); font-size:14px; line-height:1.35;}
+    @media (max-width: 860px){
+      .grid{ grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 520px){
+      .grid{ grid-template-columns: 1fr; }
+      .topbar{ justify-content:center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <button class="btn primary" id="btnDemoTop">Lihat Demo</button>
+      <button class="btn ghost" id="btnLoginTop">Masuk</button>
+    </div>
+
+    <h1>Outdoor Media Analytics Dashboard</h1>
+    <p class="sub">Analisis Traffic, Demografi, POI, dan Insight Lokasi</p>
+
+    <div class="cta">
+      <button class="btn primary" id="btnDemo">Lihat Demo</button>
+      <button class="btn ghost" id="btnLogin">Masuk</button>
+    </div>
+    <div class="note">Demo bersifat read-only. Akses selengkapnya hubungi admin.</div>
+
+    <div class="grid">
+      <div class="box"><b>KPI & Metrics</b><span>Tampilan data impresi, skor traffic, demografi.</span></div>
+      <div class="box"><b>Demografi Audience</b><span>Profil gender, usia, minat, dan kategori lokasi.</span></div>
+      <div class="box"><b>Traffic Analysis</b><span>Pantau tren lalu lintas jam & hari.</span></div>
+      <div class="box"><b>Location Insights</b><span>Lihat peta POI & potensi lokasi.</span></div>
+    </div>
+  </div>
+
+  <script src="./auth.js"></script>
+  <script>
+    function goLogin(){ window.location.href = "./login.html"; }
+    function goDemo(){
+      if (window.Auth) window.Auth.loginDemo();
+      window.location.href = "./dashboard.html";
+    }
+    document.getElementById("btnLoginTop").onclick = goLogin;
+    document.getElementById("btnLogin").onclick = goLogin;
+    document.getElementById("btnDemoTop").onclick = goDemo;
+    document.getElementById("btnDemo").onclick = goDemo;
+  </script>
+</body>
+</html>
