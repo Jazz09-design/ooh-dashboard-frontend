@@ -16,7 +16,7 @@
         BASE_URL: "https://ooh-dashboard-backend.vercel.app/api/dashboard",
         USE_STATICMAP: false
         };
-  const API_BASE = CFG.API_BASE_URL || "http://localhost:3000";
+  const API_BASE = CFG.API_BASE_URL || "https://api.project-asliku.com";
   const DASH_PREFIX = CFG.DASHBOARD_PREFIX || "/api/dashboard";
 
   // Blok dummy wiring di HTML (script inline besar)
