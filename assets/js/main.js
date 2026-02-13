@@ -164,7 +164,7 @@ function isMacOS() {
   async function getFiltersSafe() {
     // coba urutan endpoint yang mungkin ada
     const candidates = [
-      "/api/filters",
+      `${window.APP_CONFIG.API_BASE_URL}/filters`,
       "/api/dashboard/filters",
       "/api/dashboard/filters", // keep (legacy)
     ];
@@ -285,7 +285,7 @@ function isMacOS() {
   // Expose minimal API (optional)
   window.DashboardAPI = window.DashboardAPI || {
     apiGet,
-    getFilters: () => apiGet("/api/filters"),
+    getFilters: () => apiGet(`${window.APP_CONFIG.API_BASE_URL}/filters`),
   };
 
   // Auto-run kalau halaman tidak memanggil initFiltersFromAPI() sendiri
