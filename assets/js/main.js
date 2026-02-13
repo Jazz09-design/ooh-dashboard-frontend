@@ -143,25 +143,13 @@ function isMacOS() {
 
   const CFG = window.APP_CONFIG || {};
 
-  // Tentukan base API:
+  // Tentukan base API (DEMO-SAFE):
+  // Prioritas:
   // 1) APP_CONFIG.API_BASE_URL (kalau ada)
-  // 2) infer: media-analitik.project-asliku.com -> api.project-asliku.com
-  // 3) fallback: "" (same-origin)
-  function inferApiBase() {
-    try {
-      const host = window.location.hostname;
-      const isLocal = host === "localhost" || host === "127.0.0.1";
-      if (isLocal) return "";
-      const parts = host.split(".");
-      if (parts.length >= 3) parts[0] = "api";
-      else parts.unshift("api");
-      return `https://${parts.join(".")}`;
-    } catch (e) {
-      return "";
-    }
-  }
-
-  const API_BASE = String(CFG.API_BASE_URL ?? inferApiBase() ?? "").replace(/\/+$/, "");
+  // 2) default: "" (same-origin) -> request ke /api/* akan diproxy oleh Vercel rewrite (vercel.json)
+  //
+  // NOTE: sengaja TIDAK auto-infer ke subdomain api.* supaya tidak kena CORS saat DNS api belum diarahkan ke backend.
+  const API_BASE = String((CFG && CFG.API_BASE_URL) || "").replace(/\/+$/, "");
 
   async function apiGet(path) {
     const url = `${API_BASE}${path}`;
