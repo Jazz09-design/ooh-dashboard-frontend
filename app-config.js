@@ -3,7 +3,7 @@
 // ===============================
 
 // GANTI BASE URL KE BACKEND PRODUCTION
-const API_BASE = "https://api.project-asliku.com";
+const API_BASE = "https://outdoor-dashboard-api-vercel.vercel.app";
 // Kalau backend masih pakai domain default Vercel,
 // pakai ini:
 // const API_BASE = "https://ooh-dashboard-backend.vercel.app";
