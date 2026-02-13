@@ -127,3 +127,185 @@ document.addEventListener('DOMContentLoaded', function () {
 function isMacOS() {
   return /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
 }
+
+
+// =============================
+// Outdoor Media Dashboard - API wiring (classic script, NOT module)
+// Tujuan:
+// - Pastikan dropdown filters terisi dari backend (/api/filters atau /api/dashboard/filters)
+// - Aman untuk Safari (tanpa export/import)
+// - Bisa dipakai walaupun halaman tidak memuat dashboard-api.js
+// =============================
+(function () {
+  // Hindari dobel init
+  if (window.__OUTDOOR_API_WIRED__) return;
+  window.__OUTDOOR_API_WIRED__ = true;
+
+  const CFG = window.APP_CONFIG || {};
+
+  // Tentukan base API:
+  // 1) APP_CONFIG.API_BASE_URL (kalau ada)
+  // 2) infer: media-analitik.project-asliku.com -> api.project-asliku.com
+  // 3) fallback: "" (same-origin)
+  function inferApiBase() {
+    try {
+      const host = window.location.hostname;
+      const isLocal = host === "localhost" || host === "127.0.0.1";
+      if (isLocal) return "";
+      const parts = host.split(".");
+      if (parts.length >= 3) parts[0] = "api";
+      else parts.unshift("api");
+      return `https://${parts.join(".")}`;
+    } catch (e) {
+      return "";
+    }
+  }
+
+  const API_BASE = String(CFG.API_BASE_URL ?? inferApiBase() ?? "").replace(/\/+$/, "");
+
+  async function apiGet(path) {
+    const url = `${API_BASE}${path}`;
+    const res = await fetch(url, { credentials: "omit" });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`API error ${res.status}: ${text}`);
+    }
+    return res.json();
+  }
+
+  async function getFiltersSafe() {
+    // coba urutan endpoint yang mungkin ada
+    const candidates = [
+      "/api/filters",
+      "/api/dashboard/filters",
+      "/api/dashboard/filters", // keep (legacy)
+    ];
+    let lastErr = null;
+    for (const p of candidates) {
+      try {
+        return await apiGet(p);
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error("Filters endpoint not reachable");
+  }
+
+  function setOptions(selectEl, options, keepFirst = false) {
+    if (!selectEl) return;
+
+    const first = keepFirst ? selectEl.querySelector("option") : null;
+    selectEl.innerHTML = "";
+
+    if (keepFirst && first) selectEl.appendChild(first);
+
+    (options || []).forEach((opt) => {
+      const o = document.createElement("option");
+      o.value = opt.value;
+      o.textContent = opt.label;
+      selectEl.appendChild(o);
+    });
+  }
+
+  function setNativeOptions(selectEl, values, withAllLabel) {
+    if (!selectEl) return;
+    selectEl.innerHTML = "";
+
+    // tambahkan opsi "All"
+    if (withAllLabel) {
+      const o0 = document.createElement("option");
+      o0.value = "";
+      o0.textContent = withAllLabel;
+      selectEl.appendChild(o0);
+    }
+
+    (values || []).forEach((v) => {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = v;
+      selectEl.appendChild(o);
+    });
+  }
+
+  function applyDateConstraints(resp) {
+    const startEl = document.getElementById("filterStartDate");
+    const endEl = document.getElementById("filterEndDate");
+
+    if (!startEl || !endEl) return;
+
+    const min = resp.date_min || null;
+    const max = resp.date_max || null;
+
+    if (min) {
+      startEl.min = min;
+      endEl.min = min;
+    }
+    if (max) {
+      startEl.max = max;
+      endEl.max = max;
+    }
+
+    // Default (kalau kosong): ambil max sebagai end, dan 7 hari kebelakang sebagai start
+    if (!endEl.value && max) endEl.value = max;
+    if (!startEl.value && max) {
+      try {
+        const d = new Date(max + "T00:00:00");
+        d.setDate(d.getDate() - 6);
+        const s = d.toISOString().slice(0, 10);
+        startEl.value = s;
+      } catch (e) {}
+    }
+  }
+
+  // Ini fungsi yang dipanggil dari dashboard.html (bootstrapping)
+  window.initFiltersFromAPI = async function initFiltersFromAPI() {
+    try {
+      const resp = await getFiltersSafe();
+      // Simpan untuk debugging
+      window.__filtersResp = resp;
+
+      // Elemen dropdown (id berdasarkan dashboard.html Mas)
+      const cityEl = document.getElementById("filterCity");
+      const typeEl = document.getElementById("filterOOHType");
+      const locEl = document.getElementById("filterLocation");
+
+      // Prioritas pakai *_options jika ada (lebih rapi)
+      if (resp.city_options) setOptions(cityEl, resp.city_options);
+      else if (resp.cities) setNativeOptions(cityEl, resp.cities, "All Cities");
+
+      if (resp.type_options) setOptions(typeEl, resp.type_options);
+      else if (resp.ooh_types) setNativeOptions(typeEl, resp.ooh_types, "All Types");
+
+      if (resp.site_options) setOptions(locEl, resp.site_options);
+      else if (resp.sites) {
+        const mapped = resp.sites.map((s) => ({ value: String(s.id), label: s.name || `Site ${s.id}` }));
+        // prepend "All Locations"
+        mapped.unshift({ value: "", label: "All Locations" });
+        setOptions(locEl, mapped);
+      }
+
+      applyDateConstraints(resp);
+
+      // Debug
+      window.__API_BASE = API_BASE;
+      console.log("[filters] loaded", { API_BASE, cities: resp.cities?.length, sites: resp.sites?.length });
+    } catch (e) {
+      console.error("[filters] failed:", e);
+    }
+  };
+
+  // Expose minimal API (optional)
+  window.DashboardAPI = window.DashboardAPI || {
+    apiGet,
+    getFilters: () => apiGet("/api/filters"),
+  };
+
+  // Auto-run kalau halaman tidak memanggil initFiltersFromAPI() sendiri
+  try {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => window.initFiltersFromAPI && window.initFiltersFromAPI());
+    } else {
+      window.initFiltersFromAPI && window.initFiltersFromAPI();
+    }
+  } catch (e) {}
+})();
